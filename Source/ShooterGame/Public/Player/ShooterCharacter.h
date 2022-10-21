@@ -493,7 +493,51 @@ protected:
 	/** Called when freeze actor is destroyed, server side.*/
 	UFUNCTION()
 	void Server_FreezeActorDestroyed(AActor* DestroyedActor);
+	
+	///////////////////////////////////////////////////////////////////////////
+	// Shrink support.
 
+	/** The player's camera.*/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UCameraComponent* FPSCamera;
+
+	/** How long player should be frozen for. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Shrinking)
+	float ShrinkTime = 5.0f;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool bShrunk = false;
+
+	/** The actor's class which will be attached to the player during shrink. */
+	UPROPERTY(EditDefaultsOnly, Category = Shrinking)
+	TSubclassOf<AActor> ShrinkActorClass;
+
+	/** The spawned shrink actor. We need to destroy it after shrink time passed. */
+	AActor* ShrinkActor;
+
+	/** The widget we see when we are shrunk. */
+	UPROPERTY(EditDefaultsOnly, Category = Shrinking)
+	TSubclassOf<UUserWidget> ShrinkWidgetClass;
+	
+	/** Handle player shrinking, server side.*/
+	void Server_ShrinkPlayer(AShooterCharacter* DamagedCharacter);
+	
+	/** Handle player shrinking, local.*/
+	void ShrinkPlayer();
+
+	/** Handle player unshrinking, local.*/
+	void UnshrinkPlayer();
+
+	/** Called when shrink actor is destroyed, server side.*/
+	UFUNCTION()
+	void Server_ShrinkActorDestroyed(AActor* DestroyedActor);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Server_RestorePlayerSize(AShooterCharacter* Target);
+
+	/** Shrink the given player. If Reverse is true, then return to normal scale.*/
+	UFUNCTION(BlueprintImplementableEvent, BlueprintAuthorityOnly, Category = Shrinking)
+	void Server_ShrinkEvent(AShooterCharacter* Target, bool bReverse);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory

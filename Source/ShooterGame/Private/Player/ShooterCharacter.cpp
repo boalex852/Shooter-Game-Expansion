@@ -59,6 +59,10 @@ AShooterCharacter::AShooterCharacter(const FObjectInitializer& ObjectInitializer
 	GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_PROJECTILE, ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Ignore);
 
+	//Create the camera and adjust its location.
+	FPSCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	FPSCamera->SetupAttachment(GetCapsuleComponent());
+
 	TargetingSpeedModifier = 0.5f;
 	bIsTargeting = false;
 	RunningSpeedModifier = 1.5f;
@@ -344,6 +348,17 @@ void AShooterCharacter::OnDeath(float KillingDamage, struct FDamageEvent const& 
 
 	if (GetLocalRole() == ROLE_Authority)
 	{
+		//Destroy any attached actors when player dies. Notice they can be attached only if any effect is active at moment of death.
+		if (bIsAnyEffectActive)
+		{
+			TArray<AActor*> AttachedActors;
+			GetAttachedActors(AttachedActors);
+			for (auto Actor : AttachedActors)
+			{
+				Actor->Destroy();
+			}
+		}
+
 		ReplicateHit(KillingDamage, DamageEvent, PawnInstigator, DamageCauser, true);
 
 		// play the force feedback effect on the client player controller
@@ -444,6 +459,11 @@ void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& Da
 				AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
 				Server_FreezePlayer(DamagedCharacter);
 			}
+			else if (DamageType->bShrinkEffect && IsValid(ShrinkActorClass))
+			{
+				AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
+				Server_ShrinkPlayer(DamagedCharacter);
+			}
 		}
 	}
 
@@ -458,12 +478,16 @@ void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& Da
 	{
 		//This section of the code is executed only for the damaged client.
 		//Here we will add all our modifications which should occur on hit.
-		
-		//If damage is freeze type, then freeze the player.
+			
 		UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
 		if (DamageType->bFreezeEffect)
 		{
+			//If damage is freeze type, then freeze the player.
 			FreezePlayer();
+		}
+		else if (DamageType->bShrinkEffect)
+		{
+			ShrinkPlayer();
 		}
 
 		MyHUD->NotifyWeaponHit(DamageTaken, DamageEvent, PawnInstigator);
@@ -632,6 +656,88 @@ void AShooterCharacter::Server_FreezeActorDestroyed(AActor* DestroyedActor)
 	AShooterCharacter* PlayerCharacter = Cast<AShooterCharacter>(DestroyedActor->GetAttachParentActor());
 	//Player is no longer frozen, so no effects currently active.
 	PlayerCharacter->bIsAnyEffectActive = false;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Shrinking.
+
+void AShooterCharacter::Server_ShrinkPlayer(AShooterCharacter* DamagedCharacter)
+{
+	//If damanged character already has an active effect, do nothing.
+	if (DamagedCharacter->bIsAnyEffectActive)
+	{
+		return;
+	}
+
+	//Spawn the shrink actor.
+	ShrinkActor = SpawnAndAttachActor(ShrinkActorClass, DamagedCharacter, ShrinkTime);
+	ShrinkActor->OnDestroyed.AddDynamic(this, &AShooterCharacter::Server_ShrinkActorDestroyed);
+	//Call the shrink event in blueprints.
+	Server_ShrinkEvent(DamagedCharacter, false);
+	//Player currently shrunk.
+	DamagedCharacter->bShrunk = true;
+	DamagedCharacter->bIsAnyEffectActive = true;
+}
+
+void AShooterCharacter::ShrinkPlayer()
+{
+	//If damanged character already has an active effect, do nothing.
+	if (bIsAnyEffectActive)
+	{
+		return;
+	}
+
+	//Add the shrink widget to our viewport.
+	if (IsValid(ShrinkWidgetClass))
+	{
+		UUserWidget* ShrinkWidget = CreateWidget<UUserWidget>(GetWorld(), ShrinkWidgetClass);
+		ShrinkWidget->AddToViewport();
+	}
+
+	//We are shrunk now.
+	bShrunk = true;
+
+	//Set effect active, we are shrunk.
+	bIsAnyEffectActive = true;
+
+	//Unshrink after the given time.
+	FTimerHandle ShrinkTimerHandle;
+	GetWorldTimerManager().SetTimer(ShrinkTimerHandle, this, &AShooterCharacter::UnshrinkPlayer, ShrinkTime);
+}
+
+void AShooterCharacter::UnshrinkPlayer()
+{
+	bIsAnyEffectActive = false;
+	bShrunk = false;
+}
+
+void AShooterCharacter::Server_ShrinkActorDestroyed(AActor* DestroyedActor)
+{
+	//Get the player character which is being unshrunk. 
+	AShooterCharacter* PlayerCharacter = Cast<AShooterCharacter>(DestroyedActor->GetAttachParentActor());
+	//Player is no longer shrunk, so no effects currently active.
+	PlayerCharacter->bIsAnyEffectActive = false;
+	PlayerCharacter->bShrunk = false;
+
+	if (PlayerCharacter->IsAlive())
+	{
+		//Call the shrink event in blueprints, and indicate we reverse the effect.
+		Server_ShrinkEvent(PlayerCharacter, true);
+	}
+	else
+	{
+		Server_RestorePlayerSize(PlayerCharacter);
+	}
+}
+
+void AShooterCharacter::Server_RestorePlayerSize_Implementation(AShooterCharacter* Target)
+{
+	//Raise player a bit else body will fall through floor.
+	FVector CurrentLocation = Target->GetTargetLocation();
+	CurrentLocation.Set(CurrentLocation.X, CurrentLocation.Y, CurrentLocation.Z + 50);
+	Target->SetActorLocation(CurrentLocation);
+	//Restore original scale.
+	Target->GetCapsuleComponent()->SetWorldScale3D(FVector(1.0f, 1.0f, 1.0f));
 }
 
 //Pawn::PlayDying sets this lifespan, but when that function is called on client, dead pawn's role is still SimulatedProxy despite bTearOff being true. 
