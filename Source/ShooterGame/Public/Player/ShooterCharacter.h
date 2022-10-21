@@ -453,6 +453,14 @@ protected:
 
 	///////////////////////////////////////////////////////////////////////////
 	// New addition.
+	///////////////////////////////////////////////////////////////////////////
+	// General support.
+	
+	/** Spawn an actor from a given class, attach it to the given target and set its lifespan.*/
+	AActor* SpawnAndAttachActor(TSubclassOf<AActor> ActorClass,AActor* Target, float LifeSpan);
+
+	///////////////////////////////////////////////////////////////////////////
+	// Freeze support.
 
 	/** How long player should be frozen for. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Freezing)
@@ -479,9 +487,10 @@ protected:
 	/** Handle player freezing, local.*/
 	void FreezePlayer();
 
-	/** Handle player unfreezing. */
+	/** Handle player unfreezing, local. */
 	void UnfreezePlayer();
 
+	/** Called when freeze actor is destroyed, server side.*/
 	UFUNCTION()
 	void Server_FreezeActorDestroyed(AActor* DestroyedActor);
 

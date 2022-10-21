@@ -559,6 +559,28 @@ void AShooterCharacter::OnRep_LastTakeHitInfo()
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////
+// General functions.
+
+AActor* AShooterCharacter::SpawnAndAttachActor(TSubclassOf<AActor> ActorClass, AActor* Target, float LifeSpan)
+{
+	//Spawn the actor over the player's location.
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(Target->GetActorLocation());
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(ActorClass, SpawnTransform, SpawnParameters);
+	//Attach the actor to the player's pawn.
+	FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules::KeepWorldTransform;
+	SpawnedActor->AttachToActor(Target, AttachmentRules);
+	//Set the life span to be the freeze time.
+	SpawnedActor->SetLifeSpan(FreezeTime);
+	return SpawnedActor;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Freezing.
+
 void AShooterCharacter::Server_FreezePlayer(AShooterCharacter* DamagedCharacter)
 {
 	//If damanged character already has an active effect, do nothing.
@@ -567,17 +589,8 @@ void AShooterCharacter::Server_FreezePlayer(AShooterCharacter* DamagedCharacter)
 		return;
 	}
 
-	//Spawn the actor over the player's location.
-	FTransform SpawnTransform;
-	SpawnTransform.SetLocation(DamagedCharacter->GetActorLocation());
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	FreezeActor = GetWorld()->SpawnActor<AActor>(FreezeActorClass, SpawnTransform, SpawnParameters);
-	//Attach the actor to the player's pawn.
-	FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules::KeepWorldTransform;
-	FreezeActor->AttachToActor(DamagedCharacter, AttachmentRules);
-	//Set the life span to be the freeze time.
-	FreezeActor->SetLifeSpan(FreezeTime);
+	//Spawn the freeze actor.
+	FreezeActor = SpawnAndAttachActor(FreezeActorClass, DamagedCharacter, FreezeTime);
 	FreezeActor->OnDestroyed.AddDynamic(this, &AShooterCharacter::Server_FreezeActorDestroyed);
 	//Player currently frozen.
 	DamagedCharacter->bIsAnyEffectActive = true;
