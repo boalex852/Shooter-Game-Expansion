@@ -25,6 +25,10 @@ class UShooterDamageType : public UDamageType
 	/** Indicates whether the damage has freeze effect. */
 	UPROPERTY(EditDefaultsOnly, Category=Special)
 	bool bFreezeEffect = false;
+	
+	/** Indicates whether the damage has shrink effect. */
+	UPROPERTY(EditDefaultsOnly, Category = Special)
+	bool bShrinkEffect = false;
 };
 
 
