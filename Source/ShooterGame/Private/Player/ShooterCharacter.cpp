@@ -353,7 +353,7 @@ void AShooterCharacter::OnDeath(float KillingDamage, struct FDamageEvent const& 
 		{
 			TArray<AActor*> AttachedActors;
 			GetAttachedActors(AttachedActors);
-			for (auto Actor : AttachedActors)
+			for (const auto& Actor : AttachedActors)
 			{
 				Actor->Destroy();
 			}
@@ -586,7 +586,7 @@ void AShooterCharacter::OnRep_LastTakeHitInfo()
 //////////////////////////////////////////////////////////////////////////
 // General functions.
 
-AActor* AShooterCharacter::SpawnAndAttachActor(TSubclassOf<AActor> ActorClass, AActor* Target, float LifeSpan)
+AActor* AShooterCharacter::SpawnAndAttachActor(const TSubclassOf<AActor> ActorClass, AActor* Target, const float LifeSpan) const
 {
 	//Spawn the actor over the player's location.
 	FTransform SpawnTransform;
@@ -650,7 +650,7 @@ void AShooterCharacter::UnfreezePlayer()
 	bIsAnyEffectActive = false;
 }
 
-void AShooterCharacter::Server_FreezeActorDestroyed(AActor* DestroyedActor)
+void AShooterCharacter::Server_FreezeActorDestroyed(AActor* DestroyedActor) 
 {
 	//Get the player character which is being unfrozen. 
 	AShooterCharacter* PlayerCharacter = Cast<AShooterCharacter>(DestroyedActor->GetAttachParentActor());

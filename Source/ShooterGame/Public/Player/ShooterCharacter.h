@@ -457,7 +457,7 @@ protected:
 	// General support.
 	
 	/** Spawn an actor from a given class, attach it to the given target and set its lifespan.*/
-	AActor* SpawnAndAttachActor(TSubclassOf<AActor> ActorClass,AActor* Target, float LifeSpan);
+	AActor* SpawnAndAttachActor(const TSubclassOf<AActor> ActorClass, AActor* Target, const float LifeSpan) const;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Freeze support.
