@@ -451,6 +451,41 @@ protected:
 	UFUNCTION()
 	void OnRep_LastTakeHitInfo();
 
+	///////////////////////////////////////////////////////////////////////////
+	// New addition.
+
+	/** How long player should be frozen for. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Freezing)
+	float FreezeTime = 2.0f;
+
+	/** Is there any effect currently on the player? */
+	UPROPERTY()
+	uint8 bIsAnyEffectActive = false;
+
+	/** The actor's class which will be attached to the player to visually display the freeze. */
+	UPROPERTY(EditDefaultsOnly, Category = Freezing)
+	TSubclassOf<AActor> FreezeActorClass;
+
+	/** The widget we see when we are frozen. */
+	UPROPERTY(EditDefaultsOnly, Category = Freezing)
+	TSubclassOf<UUserWidget> FreezeWidgetClass;
+
+	/** The spawned freeze actor. We need to destroy it after freeze time passed. */
+	AActor* FreezeActor;
+
+	/** Handle player freezing, server side.*/
+	void Server_FreezePlayer(AShooterCharacter* DamagedCharacter);
+
+	/** Handle player freezing, local.*/
+	void FreezePlayer();
+
+	/** Handle player unfreezing. */
+	void UnfreezePlayer();
+
+	UFUNCTION()
+	void Server_FreezeActorDestroyed(AActor* DestroyedActor);
+
+
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
 

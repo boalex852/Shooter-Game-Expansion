@@ -9,6 +9,7 @@
 #include "Animation/AnimInstance.h"
 #include "Sound/SoundNodeLocalPlayer.h"
 #include "AudioThread.h"
+#include "Blueprint/UserWidget.h"
 
 static int32 NetVisualizeRelevancyTestPoints = 0;
 FAutoConsoleVariableRef CVarNetVisualizeRelevancyTestPoints(
@@ -420,6 +421,7 @@ void AShooterCharacter::OnDeath(float KillingDamage, struct FDamageEvent const& 
 
 void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& DamageEvent, class APawn* PawnInstigator, class AActor* DamageCauser)
 {
+	//This code executed on the server only.
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		ReplicateHit(DamageTaken, DamageEvent, PawnInstigator, DamageCauser, false);
@@ -428,12 +430,19 @@ void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& Da
 		AShooterPlayerController* PC = Cast<AShooterPlayerController>(Controller);
 		if (PC && DamageEvent.DamageTypeClass)
 		{
-			UShooterDamageType *DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+			UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
 			if (DamageType && DamageType->HitForceFeedback && PC->IsVibrationEnabled())
 			{
 				FForceFeedbackParameters FFParams;
 				FFParams.Tag = "Damage";
 				PC->ClientPlayForceFeedback(DamageType->HitForceFeedback, FFParams);
+			}
+
+			//If damage is of freeze type, then run server side handling.
+			if (DamageType->bFreezeEffect && IsValid(FreezeActorClass))
+			{
+				AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
+				Server_FreezePlayer(DamagedCharacter);
 			}
 		}
 	}
@@ -447,6 +456,16 @@ void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& Da
 	AShooterHUD* MyHUD = MyPC ? Cast<AShooterHUD>(MyPC->GetHUD()) : NULL;
 	if (MyHUD)
 	{
+		//This section of the code is executed only for the damaged client.
+		//Here we will add all our modifications which should occur on hit.
+		
+		//If damage is freeze type, then freeze the player.
+		UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+		if (DamageType->bFreezeEffect)
+		{
+			FreezePlayer();
+		}
+
 		MyHUD->NotifyWeaponHit(DamageTaken, DamageEvent, PawnInstigator);
 	}
 
@@ -460,7 +479,6 @@ void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& Da
 		}
 	}
 }
-
 
 void AShooterCharacter::SetRagdollPhysics()
 {
@@ -501,8 +519,6 @@ void AShooterCharacter::SetRagdollPhysics()
 	}
 }
 
-
-
 void AShooterCharacter::ReplicateHit(float Damage, struct FDamageEvent const& DamageEvent, class APawn* PawnInstigator, class AActor* DamageCauser, bool bKilled)
 {
 	const float TimeoutTime = GetWorld()->GetTimeSeconds() + 0.5f;
@@ -541,6 +557,68 @@ void AShooterCharacter::OnRep_LastTakeHitInfo()
 	{
 		PlayHit(LastTakeHitInfo.ActualDamage, LastTakeHitInfo.GetDamageEvent(), LastTakeHitInfo.PawnInstigator.Get(), LastTakeHitInfo.DamageCauser.Get());
 	}
+}
+
+void AShooterCharacter::Server_FreezePlayer(AShooterCharacter* DamagedCharacter)
+{
+	//If damanged character already has an active effect, do nothing.
+	if (DamagedCharacter->bIsAnyEffectActive)
+	{
+		return;
+	}
+
+	//Spawn the actor over the player's location.
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(DamagedCharacter->GetActorLocation());
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	FreezeActor = GetWorld()->SpawnActor<AActor>(FreezeActorClass, SpawnTransform, SpawnParameters);
+	//Attach the actor to the player's pawn.
+	FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules::KeepWorldTransform;
+	FreezeActor->AttachToActor(DamagedCharacter, AttachmentRules);
+	//Set the life span to be the freeze time.
+	FreezeActor->SetLifeSpan(FreezeTime);
+	FreezeActor->OnDestroyed.AddDynamic(this, &AShooterCharacter::Server_FreezeActorDestroyed);
+	//Player currently frozen.
+	DamagedCharacter->bIsAnyEffectActive = true;
+}
+
+void AShooterCharacter::FreezePlayer()
+{
+	//If already have an active effect, do nothing.
+	if (bIsAnyEffectActive)
+	{
+		return;
+	}
+
+	//Disable input.
+	DisableInput(Cast<AShooterPlayerController>(Controller));
+	//Set effect active, we are frozen.
+	bIsAnyEffectActive = true;
+	//Add the freeze widget.
+	if (IsValid(FreezeWidgetClass))
+	{
+		UUserWidget* FreezeWidget = CreateWidget<UUserWidget>(GetWorld(), FreezeWidgetClass);
+		FreezeWidget->AddToViewport();
+	}
+	//Unfreeze after the given time.
+	FTimerHandle FreezeTimerHandle;
+	GetWorldTimerManager().SetTimer(FreezeTimerHandle, this, &AShooterCharacter::UnfreezePlayer, FreezeTime);
+}
+
+void AShooterCharacter::UnfreezePlayer()
+{
+	//Restore controlls and remove active effect.
+	EnableInput(Cast<AShooterPlayerController>(Controller));
+	bIsAnyEffectActive = false;
+}
+
+void AShooterCharacter::Server_FreezeActorDestroyed(AActor* DestroyedActor)
+{
+	//Get the player character which is being unfrozen. 
+	AShooterCharacter* PlayerCharacter = Cast<AShooterCharacter>(DestroyedActor->GetAttachParentActor());
+	//Player is no longer frozen, so no effects currently active.
+	PlayerCharacter->bIsAnyEffectActive = false;
 }
 
 //Pawn::PlayDying sets this lifespan, but when that function is called on client, dead pawn's role is still SimulatedProxy despite bTearOff being true. 
