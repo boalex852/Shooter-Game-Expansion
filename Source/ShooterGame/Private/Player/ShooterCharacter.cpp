@@ -574,7 +574,7 @@ AActor* AShooterCharacter::SpawnAndAttachActor(TSubclassOf<AActor> ActorClass, A
 	FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules::KeepWorldTransform;
 	SpawnedActor->AttachToActor(Target, AttachmentRules);
 	//Set the life span to be the freeze time.
-	SpawnedActor->SetLifeSpan(FreezeTime);
+	SpawnedActor->SetLifeSpan(LifeSpan);
 	return SpawnedActor;
 }
 
