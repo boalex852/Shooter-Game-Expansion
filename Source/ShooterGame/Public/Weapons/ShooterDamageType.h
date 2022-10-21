@@ -21,6 +21,10 @@ class UShooterDamageType : public UDamageType
 	/** force feedback effect to play on a player killed by this damage type */
 	UPROPERTY(EditDefaultsOnly, Category=Effects)
 	UForceFeedbackEffect *KilledForceFeedback;
+
+	/** Indicates whether the damage has freeze effect. */
+	UPROPERTY(EditDefaultsOnly, Category=Special)
+	bool bFreezeEffect = false;
 };
 
 
