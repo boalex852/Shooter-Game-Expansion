@@ -16,9 +16,11 @@ class SHOOTERGAME_API AShooterPickup_Weapon : public AShooterPickup
 	/** check if pawn can use this pickup */
 	virtual bool CanBePickedUp(AShooterCharacter* TestPawn) const override;
 
+	virtual void EndPlay(EEndPlayReason::Type EndReason) override;
+
 protected:
 
-	/** The class of the weapon wickup. FOR TESTING WE EXPOSE THIS, DELETE LATER THE EXPOSURE.*/
+	/** The class of the weapon wickup.*/
 	UPROPERTY(BlueprintReadWrite)
 	TSubclassOf<AShooterWeapon> WeaponClass;
 	
@@ -33,7 +35,7 @@ protected:
 	/** The spawned weapon actor. */
 	AShooterWeapon* SpawnedWeapon;
 
-	/** After we recieve the weapon parameter, spawn it into the world. FOR TESTING THIS IS EXPOSED*/
+	/** After we recieve the weapon parameter, spawn it into the world.*/
 	UFUNCTION(BlueprintCallable)
 	void Initialization();
 
