@@ -23,8 +23,8 @@ void AShooterPickup_Weapon::EndPlay(EEndPlayReason::Type EndReason)
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		//If no one picked up the weapon, destroy it. Notice it only spawns on server side.
-		if (!bPickedUp)
+		//If no one picked up the weapon and its valid, destroy it. Notice it only spawns on server side.
+		if (!bPickedUp && IsValid(SpawnedWeapon))
 		{
 			SpawnedWeapon->Destroy();
 		}
