@@ -19,6 +19,20 @@ bool AShooterPickup_Weapon::CanBePickedUp(AShooterCharacter* TestPawn) const
 	return true;
 }
 
+void AShooterPickup_Weapon::EndPlay(EEndPlayReason::Type EndReason)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		//If no one picked up the weapon, destroy it. Notice it only spawns on server side.
+		if (!bPickedUp)
+		{
+			SpawnedWeapon->Destroy();
+		}
+	}
+
+	Super::EndPlay(EndReason);
+}
+
 void AShooterPickup_Weapon::Initialization()
 {
 	//Spawn the weapon, make sure the weapon class is valid and not zero ammo.
@@ -36,4 +50,6 @@ void AShooterPickup_Weapon::GivePickupTo(AShooterCharacter* Pawn)
 {
 	//Add the weapon to the specified player.
 	Pawn->AddWeapon(SpawnedWeapon);
+	//Weapon was picked up.
+	bPickedUp = true;
 }

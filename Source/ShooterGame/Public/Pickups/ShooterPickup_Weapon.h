@@ -32,6 +32,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	int32 CurrentAmmoInClip = 0;
 
+	/** Indicates whether the pickup was taken or not.*/
+	bool bPickedUp = false;
+
 	/** The spawned weapon actor. */
 	AShooterWeapon* SpawnedWeapon;
 
