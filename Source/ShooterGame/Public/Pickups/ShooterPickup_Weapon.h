@@ -38,7 +38,7 @@ protected:
 	/** The spawned weapon actor. */
 	AShooterWeapon* SpawnedWeapon;
 
-	/** After we recieve the weapon parameter, spawn it into the world.*/
+	/** After we recieve the weapon parameters, spawn it into the world.*/
 	UFUNCTION(BlueprintCallable)
 	void Initialization();
 
