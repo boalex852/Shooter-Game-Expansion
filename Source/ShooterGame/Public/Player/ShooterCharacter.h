@@ -540,6 +540,13 @@ protected:
 	void Server_ShrinkEvent(AShooterCharacter* Target, bool bReverse);
 
 	//////////////////////////////////////////////////////////////////////////
+	// Weapon dropping.
+
+	/** When player dies, call this event with the weapon the player has, the current ammo and the ammo in the clip.*/
+	UFUNCTION(BlueprintImplementableEvent, BlueprintAuthorityOnly, Category = Death)
+	void Server_PlayerDied(TSubclassOf<AShooterWeapon> HeldWeapon, FVector DeathLocation, int32 CurrentAmmo, int32 CurrentAmmoInClip);
+
+	//////////////////////////////////////////////////////////////////////////
 	// Inventory
 
 	/** updates current weapon */

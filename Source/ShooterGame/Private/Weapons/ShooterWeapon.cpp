@@ -73,6 +73,18 @@ void AShooterWeapon::Destroyed()
 	StopSimulatingWeaponFire();
 }
 
+////////////////////////////////////////////////////////////////////////
+//New Addition.
+void AShooterWeapon::SetAmmo(int32 Ammo)
+{
+	CurrentAmmo = Ammo;
+}
+
+void AShooterWeapon::SetAmmoInClip(int32 Ammo)
+{
+	CurrentAmmoInClip = Ammo;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Inventory
 

@@ -123,6 +123,14 @@ class AShooterWeapon : public AActor
 		return EAmmoType::EBullet;
 	}
 
+	////////////////////////////////////////////////////////////////////////
+	//New Addition.
+
+	/** Set the current ammo.*/
+	void SetAmmo(int32 Ammo);
+
+	void SetAmmoInClip(int32 Ammo);
+
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
 
