@@ -461,11 +461,11 @@ protected:
 	
 	/** Is there any effect currently on the player? */
 	UPROPERTY()
-	uint8 bIsAnyEffectActive = false;
+	bool bIsAnyEffectActive = false;
 
 	/** Is there any effect currently on the player? Server side variable.*/
 	UPROPERTY()
-	uint8 bIsAnyEffectActive_Server = false;
+	bool bIsAnyEffectActive_Server = false;
 
 	/**
 	* Exaplanation why we need two variables:
