@@ -349,7 +349,7 @@ void AShooterCharacter::OnDeath(float KillingDamage, struct FDamageEvent const& 
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		//Destroy any attached actors when player dies. Notice they can be attached only if any effect is active at moment of death.
-		if (bIsAnyEffectActive)
+		if (bIsAnyEffectActive_Server)
 		{
 			TArray<AActor*> AttachedActors;
 			GetAttachedActors(AttachedActors);
@@ -483,7 +483,7 @@ void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& Da
 	{
 		//This section of the code is executed only for the damaged client.
 		//Here we will add all our modifications which should occur on hit.
-			
+
 		UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
 		if (DamageType->bFreezeEffect)
 		{
@@ -613,7 +613,7 @@ AActor* AShooterCharacter::SpawnAndAttachActor(const TSubclassOf<AActor> ActorCl
 void AShooterCharacter::Server_FreezePlayer(AShooterCharacter* DamagedCharacter)
 {
 	//If damanged character already has an active effect, do nothing.
-	if (DamagedCharacter->bIsAnyEffectActive)
+	if (DamagedCharacter->bIsAnyEffectActive_Server)
 	{
 		return;
 	}
@@ -622,8 +622,10 @@ void AShooterCharacter::Server_FreezePlayer(AShooterCharacter* DamagedCharacter)
 	FreezeActor = SpawnAndAttachActor(FreezeActorClass, DamagedCharacter, FreezeTime);
 	FreezeActor->OnDestroyed.AddDynamic(this, &AShooterCharacter::Server_FreezeActorDestroyed);
 	//Player currently frozen.
-	DamagedCharacter->bIsAnyEffectActive = true;
+	DamagedCharacter->bIsAnyEffectActive_Server = true;
 }
+
+//IDEA: add another parameter which is server only. And this way we have two params.
 
 void AShooterCharacter::FreezePlayer()
 {
@@ -632,6 +634,9 @@ void AShooterCharacter::FreezePlayer()
 	{
 		return;
 	}
+	
+	//Stop weapon fire (during tests observed some times weapon keeps firing).
+	StopWeaponFire();
 
 	//Disable input.
 	DisableInput(Cast<AShooterPlayerController>(Controller));
@@ -660,7 +665,7 @@ void AShooterCharacter::Server_FreezeActorDestroyed(AActor* DestroyedActor)
 	//Get the player character which is being unfrozen. 
 	AShooterCharacter* PlayerCharacter = Cast<AShooterCharacter>(DestroyedActor->GetAttachParentActor());
 	//Player is no longer frozen, so no effects currently active.
-	PlayerCharacter->bIsAnyEffectActive = false;
+	PlayerCharacter->bIsAnyEffectActive_Server = false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -669,7 +674,7 @@ void AShooterCharacter::Server_FreezeActorDestroyed(AActor* DestroyedActor)
 void AShooterCharacter::Server_ShrinkPlayer(AShooterCharacter* DamagedCharacter)
 {
 	//If damanged character already has an active effect, do nothing.
-	if (DamagedCharacter->bIsAnyEffectActive)
+	if (DamagedCharacter->bIsAnyEffectActive_Server)
 	{
 		return;
 	}
@@ -679,9 +684,9 @@ void AShooterCharacter::Server_ShrinkPlayer(AShooterCharacter* DamagedCharacter)
 	ShrinkActor->OnDestroyed.AddDynamic(this, &AShooterCharacter::Server_ShrinkActorDestroyed);
 	//Call the shrink event in blueprints.
 	Server_ShrinkEvent(DamagedCharacter, false);
-	//Player currently shrunk.
+	//Player currently shrunk. Notice shrunk is not duplicated on client and server side, as it will not impact gameplay if its set twice to true/false.
 	DamagedCharacter->bShrunk = true;
-	DamagedCharacter->bIsAnyEffectActive = true;
+	DamagedCharacter->bIsAnyEffectActive_Server = true;
 }
 
 void AShooterCharacter::ShrinkPlayer()
@@ -721,7 +726,7 @@ void AShooterCharacter::Server_ShrinkActorDestroyed(AActor* DestroyedActor)
 	//Get the player character which is being unshrunk. 
 	AShooterCharacter* PlayerCharacter = Cast<AShooterCharacter>(DestroyedActor->GetAttachParentActor());
 	//Player is no longer shrunk, so no effects currently active.
-	PlayerCharacter->bIsAnyEffectActive = false;
+	PlayerCharacter->bIsAnyEffectActive_Server = false;
 	PlayerCharacter->bShrunk = false;
 
 	if (PlayerCharacter->IsAlive())

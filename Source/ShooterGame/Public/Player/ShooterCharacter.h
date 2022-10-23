@@ -458,6 +458,23 @@ protected:
 	
 	/** Spawn an actor from a given class, attach it to the given target and set its lifespan.*/
 	AActor* SpawnAndAttachActor(const TSubclassOf<AActor> ActorClass, AActor* Target, const float LifeSpan) const;
+	
+	/** Is there any effect currently on the player? */
+	UPROPERTY()
+	uint8 bIsAnyEffectActive = false;
+
+	/** Is there any effect currently on the player? Server side variable.*/
+	UPROPERTY()
+	uint8 bIsAnyEffectActive_Server = false;
+
+	/**
+	* Exaplanation why we need two variables:
+	* Since game can be both on dedicated server and hosted by a player, then we need to track if player has an effect on server side
+	* and on player side (for quick responsivness). In dedicated server there is a copy of the player character on server side, thus,
+	* we don't need two copies of the variable, but on player-hosted server, the host character has only 1 copy of the character.
+	* 
+	* To deal with both cases, we duplicate the variable, and set it on server and on client side.
+	*/
 
 	///////////////////////////////////////////////////////////////////////////
 	// Freeze support.
@@ -465,10 +482,6 @@ protected:
 	/** How long player should be frozen for. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Freezing)
 	float FreezeTime = 2.0f;
-
-	/** Is there any effect currently on the player? */
-	UPROPERTY()
-	uint8 bIsAnyEffectActive = false;
 
 	/** The actor's class which will be attached to the player to visually display the freeze. */
 	UPROPERTY(EditDefaultsOnly, Category = Freezing)
