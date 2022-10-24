@@ -10,13 +10,13 @@ AShooterPickup_Weapon::AShooterPickup_Weapon(const FObjectInitializer& ObjectIni
 
 bool AShooterPickup_Weapon::CanBePickedUp(AShooterCharacter* TestPawn) const
 {
-	//Any alive player can pick up the weapon.
-	if (TestPawn->IsAlive())
+	//Any alive player, with enough space in inventory, can pick up the weapon.
+	if (TestPawn->IsAlive() && TestPawn->GetInventoryCount() < TestPawn->GetMaxWeaponsCount())
 	{
 		return true;
 	}
 
-	return true;
+	return false;
 }
 
 void AShooterPickup_Weapon::EndPlay(EEndPlayReason::Type EndReason)

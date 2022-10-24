@@ -362,7 +362,7 @@ void AShooterCharacter::OnDeath(float KillingDamage, struct FDamageEvent const& 
 		//Get the weapon the player held when died.
 		AShooterWeapon* HeldWeapon = GetWeapon();
 		//We call the event on blueprints since the spawn actor will be a blueprint actor.
-		Server_PlayerDied(HeldWeapon->GetClass(), GetActorLocation(), HeldWeapon->GetCurrentAmmo(), HeldWeapon->GetCurrentAmmoInClip());
+		Server_CharacterDied(HeldWeapon->GetClass(), GetActorLocation(), HeldWeapon->GetCurrentAmmo(), HeldWeapon->GetCurrentAmmoInClip());
 
 		ReplicateHit(KillingDamage, DamageEvent, PawnInstigator, DamageCauser, true);
 
@@ -446,28 +446,37 @@ void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& Da
 	{
 		ReplicateHit(DamageTaken, DamageEvent, PawnInstigator, DamageCauser, false);
 
-		// play the force feedback effect on the client player controller
-		AShooterPlayerController* PC = Cast<AShooterPlayerController>(Controller);
-		if (PC && DamageEvent.DamageTypeClass)
+		if (DamageEvent.DamageTypeClass)
 		{
-			UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
-			if (DamageType && DamageType->HitForceFeedback && PC->IsVibrationEnabled())
+			//Was player damaged?
+			AShooterPlayerController* PC = Cast<AShooterPlayerController>(Controller);
+			if (PC)
 			{
-				FForceFeedbackParameters FFParams;
-				FFParams.Tag = "Damage";
-				PC->ClientPlayForceFeedback(DamageType->HitForceFeedback, FFParams);
-			}
+				// play the force feedback effect on the client player controller
+				UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+				if (DamageType && DamageType->HitForceFeedback && PC->IsVibrationEnabled())
+				{
+					FForceFeedbackParameters FFParams;
+					FFParams.Tag = "Damage";
+					PC->ClientPlayForceFeedback(DamageType->HitForceFeedback, FFParams);
+				}
 
-			//If damage is of freeze type, then run server side handling.
-			if (DamageType->bFreezeEffect && IsValid(FreezeActorClass))
-			{
-				AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
-				Server_FreezePlayer(DamagedCharacter);
+				//If damage is of freeze type, then run server side handling.
+				if (DamageType->bFreezeEffect && IsValid(FreezeActorClass))
+				{
+					AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
+					Server_FreezePlayer(DamagedCharacter);
+				}
+				else if (DamageType->bShrinkEffect && IsValid(ShrinkActorClass))
+				{
+					AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
+					Server_ShrinkPlayer(DamagedCharacter);
+				}
 			}
-			else if (DamageType->bShrinkEffect && IsValid(ShrinkActorClass))
+			else
 			{
-				AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
-				Server_ShrinkPlayer(DamagedCharacter);
+				//Bot receieved the damage.
+				DamageToBot(DamageTaken, DamageEvent, PawnInstigator, DamageCauser);
 			}
 		}
 	}
@@ -736,11 +745,11 @@ void AShooterCharacter::Server_ShrinkActorDestroyed(AActor* DestroyedActor)
 	}
 	else
 	{
-		Server_RestorePlayerSize(PlayerCharacter);
+		Server_RestorePawnSize(PlayerCharacter);
 	}
 }
 
-void AShooterCharacter::Server_RestorePlayerSize_Implementation(AShooterCharacter* Target)
+void AShooterCharacter::Server_RestorePawnSize_Implementation(AShooterCharacter* Target)
 {
 	//Raise player a bit else body will fall through floor.
 	FVector CurrentLocation = Target->GetTargetLocation();
@@ -868,6 +877,11 @@ void AShooterCharacter::ServerEquipWeapon_Implementation(AShooterWeapon* Weapon)
 void AShooterCharacter::OnRep_CurrentWeapon(AShooterWeapon* LastWeapon)
 {
 	SetCurrentWeapon(CurrentWeapon, LastWeapon);
+}
+
+int32 AShooterCharacter::GetMaxWeaponsCount()
+{
+	return MaxWeaponsCount;
 }
 
 void AShooterCharacter::SetCurrentWeapon(AShooterWeapon* NewWeapon, AShooterWeapon* LastWeapon)

@@ -56,7 +56,7 @@ class AShooterCharacter : public ACharacter
 	*
 	* @param	TestPC	Controller to check against.
 	*/
-	bool IsEnemyFor(AController* TestPC) const;
+	virtual bool IsEnemyFor(AController* TestPC) const;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
@@ -459,6 +459,8 @@ protected:
 	/** Spawn an actor from a given class, attach it to the given target and set its lifespan.*/
 	AActor* SpawnAndAttachActor(const TSubclassOf<AActor> ActorClass, AActor* Target, const float LifeSpan) const;
 	
+	virtual void DamageToBot(float DamageTaken, struct FDamageEvent const& DamageEvent, class APawn* PawnInstigator, class AActor* DamageCauser) PURE_VIRTUAL(AShooterCharacter::DamageToBot);
+
 	/** Is there any effect currently on the player? */
 	UPROPERTY()
 	bool bIsAnyEffectActive = false;
@@ -546,7 +548,7 @@ protected:
 	void Server_ShrinkActorDestroyed(AActor* DestroyedActor);
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void Server_RestorePlayerSize(AShooterCharacter* Target);
+	void Server_RestorePawnSize(AShooterCharacter* Target);
 
 	/** Shrink the given player. If Reverse is true, then return to normal scale.*/
 	UFUNCTION(BlueprintImplementableEvent, BlueprintAuthorityOnly, Category = Shrinking)
@@ -555,12 +557,20 @@ protected:
 	//////////////////////////////////////////////////////////////////////////
 	// Weapon dropping.
 
-	/** When player dies, call this event with the weapon the player has, the current ammo and the ammo in the clip.*/
+	/** When character dies (player or bot), call this event with the weapon the character has, the current ammo and the ammo in the clip.*/
 	UFUNCTION(BlueprintImplementableEvent, BlueprintAuthorityOnly, Category = Death)
-	void Server_PlayerDied(TSubclassOf<AShooterWeapon> HeldWeapon, FVector DeathLocation, int32 CurrentAmmo, int32 CurrentAmmoInClip);
+	void Server_CharacterDied(TSubclassOf<AShooterWeapon> HeldWeapon, FVector DeathLocation, int32 CurrentAmmo, int32 CurrentAmmoInClip);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
+
+protected:
+	/** The max numbers of weapons allowed.*/
+	UPROPERTY(EditDefaultsOnly, Category=Inventory)
+	int32 MaxWeaponsCount = 5;
+
+public:
+	int32 GetMaxWeaponsCount();
 
 	/** updates current weapon */
 	void SetCurrentWeapon(class AShooterWeapon* NewWeapon, class AShooterWeapon* LastWeapon = NULL);
