@@ -557,9 +557,9 @@ protected:
 	//////////////////////////////////////////////////////////////////////////
 	// Weapon dropping.
 
-	/** When player dies, call this event with the weapon the player has, the current ammo and the ammo in the clip.*/
+	/** When character dies (player or bot), call this event with the weapon the character has, the current ammo and the ammo in the clip.*/
 	UFUNCTION(BlueprintImplementableEvent, BlueprintAuthorityOnly, Category = Death)
-	void Server_PlayerDied(TSubclassOf<AShooterWeapon> HeldWeapon, FVector DeathLocation, int32 CurrentAmmo, int32 CurrentAmmoInClip);
+	void Server_CharacterDied(TSubclassOf<AShooterWeapon> HeldWeapon, FVector DeathLocation, int32 CurrentAmmo, int32 CurrentAmmoInClip);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory

@@ -362,7 +362,7 @@ void AShooterCharacter::OnDeath(float KillingDamage, struct FDamageEvent const& 
 		//Get the weapon the player held when died.
 		AShooterWeapon* HeldWeapon = GetWeapon();
 		//We call the event on blueprints since the spawn actor will be a blueprint actor.
-		Server_PlayerDied(HeldWeapon->GetClass(), GetActorLocation(), HeldWeapon->GetCurrentAmmo(), HeldWeapon->GetCurrentAmmoInClip());
+		Server_CharacterDied(HeldWeapon->GetClass(), GetActorLocation(), HeldWeapon->GetCurrentAmmo(), HeldWeapon->GetCurrentAmmoInClip());
 
 		ReplicateHit(KillingDamage, DamageEvent, PawnInstigator, DamageCauser, true);
 
