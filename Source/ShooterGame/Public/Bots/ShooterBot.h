@@ -27,10 +27,17 @@ class AShooterBot : public AShooterCharacter
 	/** Handle bot freeze damage.*/
 	void Freeze();
 
-	/** Unfreeze bot.*/
+	/** Unfreeze bot. Called when freeze actor destroyed.*/
 	UFUNCTION()
 	void Unfreeze(AActor* DestroyedActor);
 
 	/** Adjust the enemy parameters on bot.*/
-	virtual bool IsEnemyFor(AController* TestPC) const override ;
+	virtual bool IsEnemyFor(AController* TestPC) const override;
+
+	/** Handle bot shrinking.*/
+	void Shrink();
+
+	/** Handle bot unshrinking. Called when shrink actor destroyed.*/
+	UFUNCTION()
+	void Unshrink(AActor* DestroyedActor);
 };

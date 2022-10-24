@@ -35,6 +35,10 @@ void AShooterBot::DamageToBot(float DamageTaken, FDamageEvent const& DamageEvent
 		//Freeze bot if damage is of freeze type.
 		Freeze();
 	}
+	else if (DamageType->bShrinkEffect && IsValid(ShrinkActorClass))
+	{
+		Shrink();
+	}
 }
 
 void AShooterBot::Freeze()
@@ -77,4 +81,39 @@ bool AShooterBot::IsEnemyFor(AController* TestPC) const
 	}
 
 	return Super::IsEnemyFor(TestPC);
+}
+
+void AShooterBot::Shrink()
+{
+	//If damanged bot already has an active effect, do nothing.
+	if (bIsAnyEffectActive_Server)
+	{
+		return;
+	}
+
+	//Spawn the shrink actor.
+	ShrinkActor = SpawnAndAttachActor(ShrinkActorClass, this, ShrinkTime);
+	ShrinkActor->OnDestroyed.AddDynamic(this, &AShooterBot::Unshrink);
+	//Call the shrink event in blueprints.
+	Server_ShrinkEvent(this, false);
+	//bot is currently shrunk. 
+	bShrunk = true;
+	bIsAnyEffectActive_Server = true;
+}
+
+void AShooterBot::Unshrink(AActor* DestroyedActor)
+{
+	//Player is no longer shrunk, so no effects currently active.
+	bIsAnyEffectActive_Server = false;
+	bShrunk = false;
+
+	if (IsAlive())
+	{
+		//Call the shrink event in blueprints, and indicate we reverse the effect.
+		Server_ShrinkEvent(this, true);
+	}
+	else
+	{
+		Server_RestorePlayerSize(this);
+	}
 }
