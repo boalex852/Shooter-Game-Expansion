@@ -548,7 +548,7 @@ protected:
 	void Server_ShrinkActorDestroyed(AActor* DestroyedActor);
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void Server_RestorePlayerSize(AShooterCharacter* Target);
+	void Server_RestorePawnSize(AShooterCharacter* Target);
 
 	/** Shrink the given player. If Reverse is true, then return to normal scale.*/
 	UFUNCTION(BlueprintImplementableEvent, BlueprintAuthorityOnly, Category = Shrinking)

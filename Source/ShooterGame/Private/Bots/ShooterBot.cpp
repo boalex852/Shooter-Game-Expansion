@@ -114,6 +114,7 @@ void AShooterBot::Unshrink(AActor* DestroyedActor)
 	}
 	else
 	{
-		Server_RestorePlayerSize(this);
+		//Restore bot pawn size.
+		Server_RestorePawnSize(this);
 	}
 }

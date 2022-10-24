@@ -745,11 +745,11 @@ void AShooterCharacter::Server_ShrinkActorDestroyed(AActor* DestroyedActor)
 	}
 	else
 	{
-		Server_RestorePlayerSize(PlayerCharacter);
+		Server_RestorePawnSize(PlayerCharacter);
 	}
 }
 
-void AShooterCharacter::Server_RestorePlayerSize_Implementation(AShooterCharacter* Target)
+void AShooterCharacter::Server_RestorePawnSize_Implementation(AShooterCharacter* Target)
 {
 	//Raise player a bit else body will fall through floor.
 	FVector CurrentLocation = Target->GetTargetLocation();
