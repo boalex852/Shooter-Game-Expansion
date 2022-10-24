@@ -67,5 +67,8 @@ Saved/*
 Intermediate/*
 Plugins/*/Intermediate/*
 
+# Build data - files are too large even for LFS. Ignore them.
+*_BuiltData.uasset
+
 # Cache files for the editor to use
 DerivedDataCache/*

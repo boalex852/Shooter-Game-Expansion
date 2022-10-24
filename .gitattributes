@@ -17,6 +17,3 @@
 
 #Images
 /Content/Slate/Images/* filter=lfs diff=lfs merge=lfs -text
-
-#build data
-*._BuiltData.uasset filter=lfs diff=lfs merge=lfs -text
