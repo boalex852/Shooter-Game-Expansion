@@ -52,6 +52,8 @@ void AShooterBot::Freeze()
 	//Get the bot controller and unposses this pawn (stop logic).
 	BotController = GetController();
 	checkf(IsValid(BotController), TEXT("Bot has no controller, critical failure"));
+	//Stop all bot movement before we unposses it.
+	BotController->StopMovement();
 	BotController->UnPossess();
 	//Stop weapons from firing.
 	StopWeaponFire();
