@@ -564,6 +564,14 @@ protected:
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
 
+protected:
+	/** The max numbers of weapons allowed.*/
+	UPROPERTY(EditDefaultsOnly, Category=Inventory)
+	int32 MaxWeaponsCount = 5;
+
+public:
+	int32 GetMaxWeaponsCount();
+
 	/** updates current weapon */
 	void SetCurrentWeapon(class AShooterWeapon* NewWeapon, class AShooterWeapon* LastWeapon = NULL);
 

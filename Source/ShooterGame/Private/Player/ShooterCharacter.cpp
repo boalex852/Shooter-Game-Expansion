@@ -879,6 +879,11 @@ void AShooterCharacter::OnRep_CurrentWeapon(AShooterWeapon* LastWeapon)
 	SetCurrentWeapon(CurrentWeapon, LastWeapon);
 }
 
+int32 AShooterCharacter::GetMaxWeaponsCount()
+{
+	return MaxWeaponsCount;
+}
+
 void AShooterCharacter::SetCurrentWeapon(AShooterWeapon* NewWeapon, AShooterWeapon* LastWeapon)
 {
 	AShooterWeapon* LocalLastWeapon = nullptr;
