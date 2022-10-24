@@ -56,7 +56,7 @@ class AShooterCharacter : public ACharacter
 	*
 	* @param	TestPC	Controller to check against.
 	*/
-	bool IsEnemyFor(AController* TestPC) const;
+	virtual bool IsEnemyFor(AController* TestPC) const;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Inventory
@@ -459,6 +459,8 @@ protected:
 	/** Spawn an actor from a given class, attach it to the given target and set its lifespan.*/
 	AActor* SpawnAndAttachActor(const TSubclassOf<AActor> ActorClass, AActor* Target, const float LifeSpan) const;
 	
+	virtual void DamageToBot(float DamageTaken, struct FDamageEvent const& DamageEvent, class APawn* PawnInstigator, class AActor* DamageCauser) PURE_VIRTUAL(AShooterCharacter::DamageToBot);
+
 	/** Is there any effect currently on the player? */
 	UPROPERTY()
 	bool bIsAnyEffectActive = false;

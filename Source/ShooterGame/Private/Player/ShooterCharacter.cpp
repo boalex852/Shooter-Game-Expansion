@@ -446,28 +446,37 @@ void AShooterCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& Da
 	{
 		ReplicateHit(DamageTaken, DamageEvent, PawnInstigator, DamageCauser, false);
 
-		// play the force feedback effect on the client player controller
-		AShooterPlayerController* PC = Cast<AShooterPlayerController>(Controller);
-		if (PC && DamageEvent.DamageTypeClass)
+		if (DamageEvent.DamageTypeClass)
 		{
-			UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
-			if (DamageType && DamageType->HitForceFeedback && PC->IsVibrationEnabled())
+			//Was player damaged?
+			AShooterPlayerController* PC = Cast<AShooterPlayerController>(Controller);
+			if (PC)
 			{
-				FForceFeedbackParameters FFParams;
-				FFParams.Tag = "Damage";
-				PC->ClientPlayForceFeedback(DamageType->HitForceFeedback, FFParams);
-			}
+				// play the force feedback effect on the client player controller
+				UShooterDamageType* DamageType = Cast<UShooterDamageType>(DamageEvent.DamageTypeClass->GetDefaultObject());
+				if (DamageType && DamageType->HitForceFeedback && PC->IsVibrationEnabled())
+				{
+					FForceFeedbackParameters FFParams;
+					FFParams.Tag = "Damage";
+					PC->ClientPlayForceFeedback(DamageType->HitForceFeedback, FFParams);
+				}
 
-			//If damage is of freeze type, then run server side handling.
-			if (DamageType->bFreezeEffect && IsValid(FreezeActorClass))
-			{
-				AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
-				Server_FreezePlayer(DamagedCharacter);
+				//If damage is of freeze type, then run server side handling.
+				if (DamageType->bFreezeEffect && IsValid(FreezeActorClass))
+				{
+					AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
+					Server_FreezePlayer(DamagedCharacter);
+				}
+				else if (DamageType->bShrinkEffect && IsValid(ShrinkActorClass))
+				{
+					AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
+					Server_ShrinkPlayer(DamagedCharacter);
+				}
 			}
-			else if (DamageType->bShrinkEffect && IsValid(ShrinkActorClass))
+			else
 			{
-				AShooterCharacter* DamagedCharacter = Cast<AShooterCharacter>(PC->GetPawn());
-				Server_ShrinkPlayer(DamagedCharacter);
+				//Bot receieved the damage.
+				DamageToBot(DamageTaken, DamageEvent, PawnInstigator, DamageCauser);
 			}
 		}
 	}
