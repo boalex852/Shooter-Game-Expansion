@@ -1,4 +1,4 @@
-Shooter-Game-Ex-1 test, with 3 new features:
+Shooter Game Expansion, with 3 new features:
 1. Freezing gun.
 2. Shrink gun.
 3. Weapon drop on death.
